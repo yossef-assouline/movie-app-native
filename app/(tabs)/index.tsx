@@ -1,5 +1,4 @@
 import { Text, View, Image, ScrollView, ActivityIndicator } from "react-native";
-import { Link } from "expo-router";
 import SearchBar from "@/components/SearchBar";
 import { images } from "@/constants/images";
 import { icons } from "@/constants/icons";
@@ -7,7 +6,6 @@ import { useRouter } from "expo-router";
 import useFetch from "@/services/useFetch";
 import { fetchMovies } from "@/services/api";
 import { FlatList } from "react-native";
-import { useState } from "react";
 import MovieCard from "@/components/MovieCard";
 import { getTrendingMovies } from "@/services/appwrite";
 import TrendingCard from "@/components/TrendingCard";

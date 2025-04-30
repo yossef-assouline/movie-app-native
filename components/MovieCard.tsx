@@ -1,15 +1,17 @@
 import { Text, View, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useEffect } from "react";
 import { Link } from "expo-router";
 import  icon  from "../assets/icons/star.png";
-
+import { icons } from "@/constants/icons";
 const MovieCard = ({
   id,
   poster_path,
   title,
   vote_average,
   release_date,
+  savedPage = false,
 }: Movie) => {
+ 
   return (
     <Link href={`/movies/${id}`} asChild>
       <TouchableOpacity className="w-[30%]">
@@ -22,6 +24,11 @@ const MovieCard = ({
           className="w-full h-52 rounded-lg"
           resizeMode="cover"
         />
+        {savedPage && (
+          <View className="absolute  -right-2 px-2 py-1 rounded-full">
+            <Image source={icons.save} className="w-6" tintColor="#ab8bff"/>
+          </View>
+        )}
         <Text numberOfLines={1} className="text-white text-sm font-bold mt-2">{title}</Text>
         <View className="flex-row items-center justify-start gap-x-1">
           <Image

@@ -18,7 +18,7 @@ const TrendingCard = ({ movie :{movie_id , title , poster_url } , index } : Tren
         />
         <View className="absolute bottom-9 -left-3.5 px-2 py-1 rounded-full">
           <MaskedView maskElement={<Text className="font-bold text-white text-6xl text-shadow-lg"> {index + 1}</Text>}>
-            <Image source={images.rankingGradient} className="size-14" resizeMode="cover" />
+            <Image source={images.rankingGradient} className="size-14" resizeMode="cover"  />
           </MaskedView>
         </View>
         <Text numberOfLines={2} className="text-white text-sm font-bold mt-2">{title}</Text>

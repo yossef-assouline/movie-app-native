@@ -1,27 +1,89 @@
 import { View, Text, ScrollView, Image, TouchableOpacity } from "react-native";
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useLocalSearchParams } from "expo-router";
 import { fetchMovieDetails } from "@/services/api";
+import { saveMovie, getSavedMovies, removeSavedMovie, checkAuth } from "@/services/appwrite";
 import useFetch from "@/services/useFetch";
 import icon from "@/assets/icons/star.png";
 import arrow from "@/assets/icons/arrow.png";
 import { useRouter } from "expo-router";
+import save from "@/assets/icons/save.png";
+
 interface MovieInfoProps {
   label: string;
   value: string | number | null;
 }
+
 const MovieInfo = ({ label, value }: MovieInfoProps) => (
   <View className="flex-col items-start justify-center mt-5">
     <Text className="text-light-200 font-normal text-sm">{label}</Text>
     <Text className="text-light-100 font-bold text-sm">{value || 'N/A'}</Text>
   </View>
 );
+
 const MovieDetails = () => {
+  
   const router = useRouter();
   const { id } = useLocalSearchParams();
-  const { data: movie, loading } = useFetch(() =>
-    fetchMovieDetails(id as string)
-  );
+  const { data: movie, loading } = useFetch(() => fetchMovieDetails(id as string));
+  const [isSaved, setIsSaved] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<any | null>(null);
+
+  useEffect(() => {
+    const checkUserAuth = async () => {
+      try {
+        const session = await checkAuth();
+        setLoggedInUser(session);
+      } catch (error) {
+        setLoggedInUser(false);
+      }
+    };
+    checkUserAuth();
+  }, []);
+
+  useEffect(() => {
+    checkIfMovieIsSaved();
+  }, [id]);
+
+  const checkIfMovieIsSaved = async () => {
+    try {
+      const savedMovies = await getSavedMovies();
+      const isMovieSaved = savedMovies.some((savedMovie: any) => savedMovie.movieId === id);
+      setIsSaved(isMovieSaved);
+    } catch (error) {
+      console.error('Error checking saved status:', error);
+    }
+  };
+
+  const handleSaveMovie = async (movie: Movie) => {
+    if (!movie || isSaving) return;
+    
+    try {
+      setIsSaving(true);
+      await saveMovie(movie);
+      setIsSaved(true);
+    } catch (error) {
+      console.error('Error saving movie:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleRemoveSavedMovie = async (movieId: string) => {
+    if (!movieId || isSaving) return;
+    
+    try {
+      setIsSaving(true);
+      await removeSavedMovie(movieId);
+      setIsSaved(false);
+    } catch (error) {
+      console.error('Error removing saved movie:', error);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <View className="flex-1 bg-primary">
       <ScrollView contentContainerStyle={{ paddingBottom: 80 }}>
@@ -34,7 +96,27 @@ const MovieDetails = () => {
             resizeMode="stretch"
           />
         </View>
-        <View className="flex-col items-start justify-center mt-5 px-5">
+        <View className="flex-col items-start justify-center mt-5 px-5 border">
+          <TouchableOpacity 
+            className="flex items-center justify-center absolute top-5 right-5" 
+            onPress={() => {
+              if(loggedInUser){
+                isSaved ? handleRemoveSavedMovie(movie?.id?.toString() ?? "") : handleSaveMovie(movie);
+              }else{
+                router.push("/profile");
+              }
+            }}
+            disabled={isSaving}
+          >
+            <Image 
+              source={save} 
+              className="size-8" 
+              tintColor={isSaved ? "#ab8bff" : "#A8B5DB"} 
+            />
+            <Text className={`text-sm ${isSaved ? 'text-[#ab8bff]' : 'text-white'} text-center`}>
+              {isSaved ? 'Saved' : 'Save'}
+            </Text>
+          </TouchableOpacity>
           <Text className="text-white text-xl font-bold">{movie?.title}</Text>
           <View className="flex-row items-center gap-x-1 mt-2">
             <Text className="text-light-200 text-sm">
@@ -53,24 +135,24 @@ const MovieDetails = () => {
               {movie?.vote_count} votes
             </Text>
           </View>
-          <MovieInfo label="Overview" value={movie?.overview} />
+          <MovieInfo label="Overview" value={movie?.overview ?? 'N/A'} />
           <MovieInfo label="Genres" value={movie?.genres?.map((genre) => genre.name).join(" - ") || 'N/A'} />
-            <View className="flex flex-row justify-between w-1/2">
-              <MovieInfo label="Budget" value={`$${movie?.budget && movie.budget >= 1_000_000_000 ? (movie.budget / 1_000_000_000).toFixed(1) + ' billion' : (movie?.budget / 1_000_000).toFixed(0) + ' million'}`} />
-              <MovieInfo label="Revenue" value={`$${movie?.revenue && movie.revenue >= 1_000_000_000 ? (movie.revenue / 1_000_000_000).toFixed(1) + ' billion' : (movie?.revenue / 1_000_000).toFixed(0) + ' million'}`} />
-            </View>
-            <MovieInfo label="Production Companies" value={movie?.production_companies?.map((company) => company.name).join(" - ") || 'N/A'} />
-          
+          <View className="flex flex-row justify-between w-1/2">
+            <MovieInfo label="Budget" value={`$${movie?.budget && movie.budget >= 1_000_000_000 ? (movie.budget / 1_000_000_000).toFixed(1) + ' billion' : (movie?.budget ?? 0 / 1_000_000).toFixed(0) + ' million'}`} />
+            <MovieInfo label="Revenue" value={`$${movie?.revenue && movie.revenue >= 1_000_000_000 ? (movie.revenue / 1_000_000_000).toFixed(1) + ' billion' : (movie?.revenue ?? 0 / 1_000_000).toFixed(0) + ' million'}`} />
+          </View>
+          <MovieInfo label="Production Companies" value={movie?.production_companies?.map((company) => company.name).join(" - ") || 'N/A'} />
         </View>
       </ScrollView>
-            <TouchableOpacity
-            onPress={() => router.back()}
-             className="absolute bottom-5 left-0 right-0 mx-5 bg-accent rounded-lg py-3.5 flex flex-row items-center justify-center z-50">
-              <Image source={arrow} className="size-5 mr-1 mt-0.5 rotate-180" tintColor="#fff" />
-              <Text className="text white font-semibold text-base">
-               Go Back
-              </Text>
-            </TouchableOpacity>
+      <TouchableOpacity
+        onPress={() => router.back()}
+        className="absolute bottom-5 left-0 right-0 mx-5 bg-accent rounded-lg py-3.5 flex flex-row items-center justify-center z-50"
+      >
+        <Image source={arrow} className="size-5 mr-1 mt-0.5 rotate-180" tintColor="#fff" />
+        <Text className="text white font-semibold text-base">
+          Go Back
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 };
