@@ -21,6 +21,15 @@ const MovieInfo = ({ label, value }: MovieInfoProps) => (
   </View>
 );
 
+const formatCurrency = (amount: number | undefined): string => {
+  if (!amount) return 'N/A';
+  
+  if (amount >= 1_000_000_000) {
+    return `$${(amount / 1_000_000_000).toFixed(1)} billion`;
+  }
+  return `$${(amount / 1_000_000).toFixed(0)} million`;
+};
+
 const MovieDetails = () => {
   
   const router = useRouter();
@@ -138,8 +147,8 @@ const MovieDetails = () => {
           <MovieInfo label="Overview" value={movie?.overview ?? 'N/A'} />
           <MovieInfo label="Genres" value={movie?.genres?.map((genre) => genre.name).join(" - ") || 'N/A'} />
           <View className="flex flex-row justify-between w-1/2">
-            <MovieInfo label="Budget" value={`$${movie?.budget && movie.budget >= 1_000_000_000 ? (movie.budget / 1_000_000_000).toFixed(1) + ' billion' : (movie?.budget ?? 0 / 1_000_000).toFixed(0) + ' million'}`} />
-            <MovieInfo label="Revenue" value={`$${movie?.revenue && movie.revenue >= 1_000_000_000 ? (movie.revenue / 1_000_000_000).toFixed(1) + ' billion' : (movie?.revenue ?? 0 / 1_000_000).toFixed(0) + ' million'}`} />
+            <MovieInfo label="Budget" value={formatCurrency(movie?.budget)} />
+            <MovieInfo label="Revenue" value={formatCurrency(movie?.revenue)} />
           </View>
           <MovieInfo label="Production Companies" value={movie?.production_companies?.map((company) => company.name).join(" - ") || 'N/A'} />
         </View>
